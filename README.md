@@ -10,6 +10,9 @@ general purpose database, which is made easier by this package.
 The source for this package includes an AWS CDK application that creates a Neptune 
 cluster and a Lambda function in the same VPC to facilitate integration testing.
 
+*NOTICE* This is an experimental package that is not supported in any way by AWS. 
+Please do not use it for mission critical production workloads!
+
 ## Installation
 
 ```sh

@@ -17,7 +17,7 @@
     "graph"
   ],
   "author": "Eric Z. Beard",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "async": "^3.2.2",
     "aws4": "^1.11.0",
