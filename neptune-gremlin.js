@@ -406,32 +406,15 @@ async function updateProperties(id, g, props, isNode = true) {
     // Compare existing props and delete any that are missing
     const existingProps = await gve.call(g, id).valueMap().toList()
     console.info("existingProps", existingProps)
-    for (const ep in existingProps[0]) {
-        if (!(ep in props)) {
-            console.log("Removing prop", ep)
-            const r = await gve.call(g, id).properties(ep).drop().next()
-            console.info("Prop drop result", r)
-        }
-    }
 
-    // We're doing these one at a time to keep things simple.
-    // It might be possible to do this in a single traversal but I'm 
-    // not sure how to do that or if it would be worth it.
-    for (const prop in props) {
-        console.log(`Saving prop ${prop}`)
-        let r
-        if (isNode) {
-            r = await gve.call(g, id)
-                .property(gremlin.process.cardinality.single, prop, props[prop])
-                .next()
-        } else {
-            r = await gve.call(g, id)
-                .property(prop, props[prop])
-                .next()
-        }
-        console.info("Prop save result", r)
-    }
+    const propsToDrop = Object.keys(existingProps[0]).filter(key => props[key] == null)
 
+    const updatePropsTraversal = Object.entries(props).reduce((query, [key, value]) => {
+        return isNode ? query.property(gremlin.process.cardinality.single, key, value)
+            : query.property(key, value)
+    }, gve.call(g, id))
+
+    return updatePropsTraversal.properties(...propsToDrop).drop().next()
 }
 
 /**
