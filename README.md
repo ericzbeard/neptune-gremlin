@@ -3,7 +3,7 @@
 The `neptune-gremlin` package is an SDK for querying an Amazon Neptune graph
 database using gremlin. Amazon Neptune is is a fast, reliable, fully managed
 graph database service that makes it easy to build and run applications. It
-allows you to build connections between identities, building knowledge graphs,
+allows you to build connections between identities, build knowledge graphs,
 detect fraud patterns, and make predictions. It can also simply be used as a
 general purpose database, which is made easier by this package.
 
@@ -24,7 +24,7 @@ npm install neptune-gremlin
 ### Connect to Neptune:
 
 ```Javascript
-const gremlin = require("./aws-neptune-gremlin")
+const gremlin = require("neptune-gremlin")
 
 // Get configuration values from the environment
 const host = process.env.NEPTUNE_ENDPOINT
@@ -77,7 +77,7 @@ npm run build
 ### Making changes
 
 If you want to make a change or an addition to the package (contributions welcome!), please 
-add a test to `cdk-test-app/lambda.integration-test.js`. Deploy the stack to your AWS account 
+add a test to `cdk-test-app/lambda/integration-test.js`. Deploy the stack to your AWS account 
 and invoke the function to make sure everything works as expected.
 
 ### Deploying the cdk test app
