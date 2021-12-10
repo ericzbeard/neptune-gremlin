@@ -5,7 +5,7 @@
   "main": "neptune-gremlin.js",
   "scripts": {
     "test": "jest",
-    "build": "npm run lint && cp neptune-gremlin.js ./cdk-test-app/lambda && cd cdk-test-app && cdk synth && cd .. && npm run test",
+    "build": "npm run lint && npm i && cp neptune-gremlin.js ./cdk-test-app/lambda && cd cdk-test-app && cdk synth && cd .. && npm run test",
     "lint": "eslint . --fix"
   },
   "keywords": [
@@ -25,6 +25,10 @@
     "util": "^0.12.4"
   },
   "devDependencies": {
+    "@aws-cdk/aws-neptune-alpha": "^2.1.0-alpha.0",
+    "aws-cdk": "^2.1.0",
+    "aws-cdk-lib": "^2.1.0",
+    "constructs": "^10.0.12",
     "eslint": "^8.4.1",
     "jest": "^27.4.3"
   }
