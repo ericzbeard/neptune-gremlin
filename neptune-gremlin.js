@@ -393,11 +393,12 @@ class Connection {
 }
 
 /**
- * Update the properties of an existing node or edge.
- * 
+ * Update the properties of an existing node or edge. NB: any properties contained in the DB version
+ * but *not* contained in the props parameter will be deleted.
+ *
  * Cardinality is always single for node properties.
- * 
- * @param {*} id 
+ *
+ * @param {*} id
  */
 async function updateProperties(id, g, props, isNode = true) {
 
@@ -406,32 +407,21 @@ async function updateProperties(id, g, props, isNode = true) {
     // Compare existing props and delete any that are missing
     const existingProps = await gve.call(g, id).valueMap().toList()
     console.info("existingProps", existingProps)
-    for (const ep in existingProps[0]) {
-        if (!(ep in props)) {
-            console.log("Removing prop", ep)
-            const r = await gve.call(g, id).properties(ep).drop().next()
-            console.info("Prop drop result", r)
-        }
-    }
 
-    // We're doing these one at a time to keep things simple.
-    // It might be possible to do this in a single traversal but I'm 
-    // not sure how to do that or if it would be worth it.
-    for (const prop in props) {
-        console.log(`Saving prop ${prop}`)
-        let r
-        if (isNode) {
-            r = await gve.call(g, id)
-                .property(gremlin.process.cardinality.single, prop, props[prop])
-                .next()
-        } else {
-            r = await gve.call(g, id)
-                .property(prop, props[prop])
-                .next()
-        }
-        console.info("Prop save result", r)
-    }
+    const propsToDrop = Object.keys(existingProps[0]).filter(key => props[key] == null)
+    await gve.call(g, id).properties(...propsToDrop).drop().next()
 
+    // We split props into an array of tuples ([['key1', 'val1'], ['key2', 'val2'], ...] and pass it to reduce.
+    // We use gve.call(g, id) as the initial value for the reduce. Each time the reducer function receives a
+    // key/value pair we chain another call to property() onto the query we've been building and pass the
+    // current key and value as arguments to property(). The cardinality.single argument is required to overwrite
+    // the old value, otherwise it would just be appended to a list of values
+    const updatePropsTraversal = Object.entries(props).reduce((query, [key, value]) => {
+        return isNode ? query.property(gremlin.process.cardinality.single, key, value)
+            : query.property(key, value)
+    }, gve.call(g, id))
+
+    return updatePropsTraversal.next()
 }
 
 /**
