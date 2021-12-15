@@ -127,20 +127,19 @@ class Connection {
      */
     getG() {
         console.log("About to get traversal")
+        
         let g = traversal().withRemote(this.connection)
-        let gx = g
-        if (this.partition) {
-            console.log("Using a partition strategy:", this.partition)
-            const strategy = new PartitionStrategy(
-                {
-                    partitionKey: "_partition", 
-                    writePartition: this.partition, 
-                    readPartitions: [this.partition],
-                },
-            )
-            gx = g.withStrategies(strategy)
-        }
-        return gx
+
+        if (!this.partition) return g
+
+        console.log("Using a partition strategy:", this.partition)
+
+        return g.withStrategies(new PartitionStrategy({
+            partitionKey: "_partition", 
+            writePartition: this.partition, 
+            readPartitions: [this.partition],
+        }))
+       
     }
 
     /**
@@ -447,15 +446,14 @@ async function updateProperties(id, g, props, isNode = true) {
     const existingProps = await gve.call(g, id).valueMap().toList()
     console.info("existingProps", existingProps)
 
-    // This breaks with partitions
-    // The vertex save injected the _partition property, so it's already there 
-    // existingProps [ { _partition: [ 'test_partition' ] } ] 
-    // We will filter out _partition below
+    // We filter out the _partition property below since it is 
+    // automatically added by the partition strategy when we save 
+    // a new node, and we don't want to delete it.
 
     const propsToDrop = Object.keys(existingProps[0]).filter(key => {
         return props[key] == null && key !== "_partition" })
     console.info("propsToDrop", propsToDrop)
-    if (propsToDrop && propsToDrop.length > 0) {
+    if (propsToDrop.length > 0) {
         console.info("dropping properties", propsToDrop)
         await gve.call(g, id).properties(...propsToDrop).drop().next()
     } else {
