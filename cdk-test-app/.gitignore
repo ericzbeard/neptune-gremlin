@@ -4,3 +4,4 @@ node_modules
 .cdk.staging
 cdk.out
 lambda/neptune-gremlin.js
+invoke-test.sh

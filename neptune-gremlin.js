@@ -4,6 +4,7 @@ const {traversal} = gremlin.process.AnonymousTraversalSource
 const {DriverRemoteConnection} = gremlin.driver
 const util = require("util")
 const aws4 = require("aws4")
+const { PartitionStrategy } = require("gremlin/lib/process/traversal-strategy")
 
 /**
  * Represents a connection to Neptune's gremlin endpoint.
@@ -72,6 +73,21 @@ class Connection {
         this.port = port
         this.useIam = useIam
         this.connection = null
+        this.partition = null
+    }
+
+    /**
+     * Set the named graph partition that you want to use for all subsequent operations.
+     * 
+     * A partition allows you to create a graph that is partitioned from other graphs.
+     * 
+     * Neptune by default gives you a single graph per cluster. Partitions can be used as a 
+     * way to muti-tenant within that single cluster.
+     * 
+     * @param {*} p 
+     */
+    setPartition(p) {
+        this.partition = p
     }
 
     /**
@@ -105,6 +121,28 @@ class Connection {
     }
 
     /**
+     * Get the graph traversal, which might be using a partition strategy.
+     * 
+     * @returns 
+     */
+    getG() {
+        console.log("About to get traversal")
+        
+        let g = traversal().withRemote(this.connection)
+
+        if (!this.partition) return g
+
+        console.log("Using a partition strategy:", this.partition)
+
+        return g.withStrategies(new PartitionStrategy({
+            partitionKey: "_partition", 
+            writePartition: this.partition, 
+            readPartitions: [this.partition],
+        }))
+       
+    }
+
+    /**
      * Query the endpoint.
      * 
      * For simple use cases, use the provided helper functions `saveNode`, `saveEdge`, etc.
@@ -114,8 +152,8 @@ class Connection {
      */
     async query(f) {
 
-        console.log("About to get traversal")
-        let g = traversal().withRemote(this.connection)
+        let g = this.getG()
+        const self = this
 
         console.log("About to start async retry loop")
         return async.retry(
@@ -132,7 +170,7 @@ class Connection {
                         console.warn("Reopening connection")
                         this.connection.close()
                         this.connect()
-                        g = traversal().withRemote(this.connection)
+                        g = self.getG()
                         return true
                     }
 
@@ -408,8 +446,19 @@ async function updateProperties(id, g, props, isNode = true) {
     const existingProps = await gve.call(g, id).valueMap().toList()
     console.info("existingProps", existingProps)
 
-    const propsToDrop = Object.keys(existingProps[0]).filter(key => props[key] == null)
-    await gve.call(g, id).properties(...propsToDrop).drop().next()
+    // We filter out the _partition property below since it is 
+    // automatically added by the partition strategy when we save 
+    // a new node, and we don't want to delete it.
+
+    const propsToDrop = Object.keys(existingProps[0]).filter(key => {
+        return props[key] == null && key !== "_partition" })
+    console.info("propsToDrop", propsToDrop)
+    if (propsToDrop.length > 0) {
+        console.info("dropping properties", propsToDrop)
+        await gve.call(g, id).properties(...propsToDrop).drop().next()
+    } else {
+        console.log("No properties to drop")
+    }
 
     // We split props into an array of tuples ([['key1', 'val1'], ['key2', 'val2'], ...] and pass it to reduce.
     // We use gve.call(g, id) as the initial value for the reduce. Each time the reducer function receives a
