@@ -40,6 +40,26 @@ function runAssertions(assertions) {
 }
 
 /**
+ * Lambda handler for the integration tests.
+ * 
+ * @param {*} event 
+ * @param {*} context 
+ * @returns 
+ */
+exports.handler = async (event, context) => {
+    console.log(event)
+    console.log(context)
+
+    try {
+        await runTests()
+        return true
+    } catch (ex) {
+        console.error(ex)
+        return false
+    }
+}
+
+/**
  * Test the neptune-gremlin lib
  * 
  * This has to be a Lambda function since it needs to be in the VPC with Neptune.
@@ -47,9 +67,7 @@ function runAssertions(assertions) {
  * @param {*} event 
  * @param {*} context 
  */
-exports.handler = async (event, context) => {
-    console.log(event)
-    console.log(context)
+async function runTests() {
 
     const host = process.env.NEPTUNE_ENDPOINT
     const port = process.env.NEPTUNE_PORT
@@ -190,5 +208,87 @@ exports.handler = async (event, context) => {
         throw new Error("delete assertions failed")
     }
 
-    return deletedOk
+    // Test partitions
+    await testPartitions(connection)
+
+    return true
+}
+
+/**
+ * Test the partition strategy functionality.
+ * 
+ * @param {*} connection 
+ */
+async function testPartitions(connection) {
+
+    // Set the partition
+    connection.setPartition("test_partition")
+
+    const id = uuid.v4()
+
+    const partitionNode = {
+        id,
+        properties: {
+            name: "Test Partition",
+            e: "E",
+        },
+        labels: ["label3"],
+    }
+
+    await connection.saveNode(partitionNode)
+
+    let searchResult = await connection.search({})
+
+    let found
+
+    for (const node of searchResult.nodes) {
+        if (node.id === id) {
+            found = node
+            break
+        }
+    }
+
+    console.info("found", found)
+
+    let assertions = {
+        "Search": () => found !== undefined,
+        "Name": () => found.properties.name === "Test Partition",
+        "E": () => found.properties.e === "E",
+        "Label": () => found.labels[0] === "label3",
+    }
+
+    const createOk = runAssertions(assertions)
+
+    if (!createOk) {
+        throw new Error("partitionNode assertions failed")
+    }
+
+    // Change to a different partition
+    connection.setPartition("second_partition")
+
+    searchResult = await connection.search({})
+    
+    found = undefined
+
+    for (const node of searchResult.nodes) {
+        if (node.id === id) {
+            found = node
+            break
+        }
+    }
+
+    console.info("found", found)
+
+    assertions = {
+        "Search": () => found === undefined,
+    }
+
+    const notFound = runAssertions(assertions)
+
+    if (!notFound) {
+        throw new Error("Should not have found node in second partition")
+    }
+
+    await connection.deleteNode(id)
+
 }
