@@ -51,6 +51,29 @@ const node1 = {
 await connection.saveNode(node1)
 ```
 
+### Save an edge
+
+```JavaScript
+
+const edge1 = {
+    id: uuid.v4(),
+    label: "points_to", 
+    to: node2.id, 
+    from: node1.id,
+    properties: {
+        "a": "b",
+    },
+}
+
+await connection.saveEdge(edge1)
+```
+
+### Get all nodes and edges in the graph
+
+```JavaScript
+const searchResult = await connection.search({})
+```
+
 ### Run a custom traversal:
 
 ```Javascript
@@ -62,6 +85,20 @@ const f = (g) => {
 }
 const result = await connection.query(f)
 ```
+
+### Partition the graph
+
+A Neptune cluster does not have a native paritioning concept. All nodes are in the same database. 
+Gremlin has a feature called a partition strategy that adds a property to each node and edge 
+automatically to segment your graph into different sub graphs.
+
+All you have to do with this library is set the partition on the connection:
+
+```JavaScript
+connection.setPartition("test_partition")
+```
+
+All subsequent calls using that connection will have the `_partition` property added by default.
 
 ## Development
 
@@ -88,6 +125,9 @@ file into the cdk app's lambda folder.
 Also keep in mind that the very first call to a new Neptune cluster tends to fail with a 500, 
 so if that happens, just try again.
 
+_Note that this app will result in charges in your AWS account! Be sure to destroy the stack
+when you are done!_
+
 ```sh
 npm run build
 cd cdk-test-app
@@ -99,4 +139,10 @@ npx cdk bootstrap
 npx cdk synth
 npx cdk diff
 npx cdk deploy
+```
+
+### Cleaning up the CDK stack to avoid charges to your AWS account
+
+```sh
+cdk destroy
 ```
