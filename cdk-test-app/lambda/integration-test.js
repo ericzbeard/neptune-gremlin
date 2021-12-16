@@ -175,6 +175,31 @@ async function runTests() {
     await connection.saveEdge(edge2)
     await connection.deleteEdge(edge2.id)
 
+    // Remove a property and make sure it get dropped
+    delete node1.properties.b
+    await connection.saveNode(node1)
+    
+    searchResult = await connection.search({})
+
+    found = undefined
+
+    for (const node of searchResult.nodes) {
+        if (node.id === id) {
+            found = node
+            break
+        }
+    }
+
+    console.info("found after dropping property", found)
+
+    const propDropped = runAssertions({
+        "No B": () => found.properties.b === undefined,
+    })
+
+    if (!propDropped) {
+        throw new Error("Property was not dropped")
+    }
+
     // Delete the node
     await connection.deleteNode(id)
 
