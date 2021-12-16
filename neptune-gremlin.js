@@ -443,14 +443,14 @@ async function updateProperties(id, g, props, isNode = true) {
     const gve = isNode ? g.V : g.E
 
     // Compare existing props and delete any that are missing
-    const existingProps = await gve.call(g, id).elementMap().toList()
+    const existingProps = await gve.call(g, id).valueMap().toList()
     console.info("existingProps", existingProps)
 
     // We filter out the _partition property below since it is 
     // automatically added by the partition strategy when we save 
     // a new node, and we don't want to delete it.
 
-    const propsToDrop = Object.keys(existingProps).filter(key => {
+    const propsToDrop = Object.keys(existingProps[0]).filter(key => {
         return props[key] == null && key !== "_partition" })
     console.info("propsToDrop", propsToDrop)
     if (propsToDrop.length > 0) {
