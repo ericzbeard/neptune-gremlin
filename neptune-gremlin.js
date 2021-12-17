@@ -1,6 +1,7 @@
 const gremlin = require("gremlin")
 const async = require("async")
 const {traversal} = gremlin.process.AnonymousTraversalSource
+const { t } = gremlin.process
 const {DriverRemoteConnection} = gremlin.driver
 const util = require("util")
 const aws4 = require("aws4")
@@ -220,9 +221,9 @@ class Connection {
                 await updateProperties(node.id, g, node.properties)
             } else {
                 // Create the new node
-                const result = await g.addV(node.labels.join("::"))
-                    .property(gremlin.process.t.id, node.id)
-                    .next()
+                let query = g.addV(node.labels.join("::"))
+                if(node.id == null) query = query.property(t.id, node.id)
+                const result = query.next()
                 console.log(util.inspect(result))
                 await updateProperties(node.id, g, node.properties)
             }

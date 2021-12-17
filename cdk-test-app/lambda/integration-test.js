@@ -1,3 +1,4 @@
+const nodeAssert = require("assert").strict
 const uuid = require("uuid")
 const gremlin = require("./neptune-gremlin")
 
@@ -57,6 +58,21 @@ exports.handler = async (event, context) => {
         console.error(ex)
         return false
     }
+}
+
+async function testNoId(conn) {
+    console.log("Test creating node with no id")
+    const propVal = "testNoIdProp"
+    await conn.saveNode({
+        properties: {
+            testNoIdProp: propVal,
+        },
+        labels: ["label"],
+    })
+
+    const node = conn.query(async g => g.V().has("testNoIdProp", propVal))
+    nodeAssert.strictEqual(node.key, propVal)
+
 }
 
 /**
@@ -235,6 +251,9 @@ async function runTests() {
 
     // Test partitions
     await testPartitions(connection)
+
+    // Test create with no id
+    await testNoId(connection)
 
     return true
 }
