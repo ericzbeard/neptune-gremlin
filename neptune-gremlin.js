@@ -209,10 +209,10 @@ class Connection {
      * @param {*} node 
      */
     async saveNode(node) {
-        console.info("saveNode", node)
+        console.info("saving node", node)
 
         await this.query(async function (g) {
-            const existing = await g.V(node.id).next()
+            const existing = node.id == null ? {} : await g.V(node.id).next()
             console.log(existing)
 
             if (existing.value) {
@@ -222,12 +222,13 @@ class Connection {
             } else {
                 // Create the new node
                 let query = g.addV(node.labels.join("::"))
-                if(node.id == null) query = query.property(t.id, node.id)
-                const result = query.next()
+                if(node.id != null) query = query.property(t.id, node.id)
+                const {value: result} = await query.next()
                 console.log(util.inspect(result))
-                await updateProperties(node.id, g, node.properties)
+                await updateProperties(result.id, g, node.properties)
             }
         })
+        console.log("node saved")
 
     }
 
@@ -467,6 +468,7 @@ async function updateProperties(id, g, props, isNode = true) {
     // current key and value as arguments to property(). The cardinality.single argument is required to overwrite
     // the old value, otherwise it would just be appended to a list of values
     const updatePropsTraversal = Object.entries(props).reduce((query, [key, value]) => {
+        console.log("***********REDUCE ", key, ":", value)
         return isNode ? query.property(gremlin.process.cardinality.single, key, value)
             : query.property(key, value)
     }, gve.call(g, id))

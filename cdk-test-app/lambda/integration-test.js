@@ -62,17 +62,19 @@ exports.handler = async (event, context) => {
 
 async function testNoId(conn) {
     console.log("Test creating node with no id")
-    const propVal = "testNoIdProp"
+    const propVal = uuid.v4()
     await conn.saveNode({
         properties: {
-            testNoIdProp: propVal,
+            testnoidprop: propVal,
         },
-        labels: ["label"],
+        labels: ["testNoIdLabel"],
     })
 
-    const node = conn.query(async g => g.V().has("testNoIdProp", propVal))
-    nodeAssert.strictEqual(node.key, propVal)
+    const {value: node} = await conn.query(async g => g.V().has("testnoidprop", propVal).elementMap().next())
 
+    console.log("TesNoId node found", node)
+
+    nodeAssert.strictEqual(node.testnoidprop, propVal)
 }
 
 /**
@@ -121,8 +123,8 @@ async function runTests() {
 
     const edge1 = {
         id: uuid.v4(),
-        label: "points_to", 
-        to: node2.id, 
+        label: "points_to",
+        to: node2.id,
         from: node1.id,
         properties: {
             "a": "b",
@@ -182,9 +184,9 @@ async function runTests() {
     // Make an edge in the other direction
     const edge2 = {
         id: uuid.v4(),
-        label: "points_to", 
+        label: "points_to",
         properties: {},
-        to: node1.id, 
+        to: node1.id,
         from: node2.id,
     }
 
@@ -194,7 +196,7 @@ async function runTests() {
     // Remove a property and make sure it get dropped
     delete node1.properties.b
     await connection.saveNode(node1)
-    
+
     searchResult = await connection.search({})
 
     found = undefined
@@ -249,19 +251,18 @@ async function runTests() {
         throw new Error("delete assertions failed")
     }
 
+    await testNoId(connection)
+
     // Test partitions
     await testPartitions(connection)
-
-    // Test create with no id
-    await testNoId(connection)
 
     return true
 }
 
 /**
  * Test the partition strategy functionality.
- * 
- * @param {*} connection 
+ *
+ * @param {*} connection
  */
 async function testPartitions(connection) {
 
@@ -311,7 +312,7 @@ async function testPartitions(connection) {
     connection.setPartition("second_partition")
 
     searchResult = await connection.search({})
-    
+
     found = undefined
 
     for (const node of searchResult.nodes) {
