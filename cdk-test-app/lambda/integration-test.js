@@ -72,7 +72,7 @@ async function testNoId(conn) {
 
     const {value: node} = await conn.query(async g => g.V().has("testnoidprop", propVal).elementMap().next())
 
-    console.log("TesNoId node found", node)
+    console.log("TestNoId node found", node)
 
     nodeAssert.strictEqual(node.testnoidprop, propVal)
 }
