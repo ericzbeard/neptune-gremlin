@@ -468,7 +468,6 @@ async function updateProperties(id, g, props, isNode = true) {
     // current key and value as arguments to property(). The cardinality.single argument is required to overwrite
     // the old value, otherwise it would just be appended to a list of values
     const updatePropsTraversal = Object.entries(props).reduce((query, [key, value]) => {
-        console.log("***********REDUCE ", key, ":", value)
         return isNode ? query.property(gremlin.process.cardinality.single, key, value)
             : query.property(key, value)
     }, gve.call(g, id))
