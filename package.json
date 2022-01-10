@@ -1,6 +1,6 @@
 {
   "name": "neptune-gremlin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "An SDK for querying an Amazon Neptune graph database using gremlin",
   "main": "neptune-gremlin.js",
   "homepage": "https://github.com/ericzbeard/neptune-gremlin",
