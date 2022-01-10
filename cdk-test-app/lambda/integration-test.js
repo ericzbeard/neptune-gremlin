@@ -91,7 +91,7 @@ async function runTests() {
     const port = process.env.NEPTUNE_PORT
     const useIam = process.env.USE_IAM === "true"
 
-    const connection = new gremlin.Connection(host, port, useIam)
+    const connection = new gremlin.Connection(host, port, {useIam})
 
     console.log(`About to connect to ${host}:${port} useIam:${useIam}`)
 

@@ -32,7 +32,7 @@ const port = process.env.NEPTUNE_PORT
 const useIam = process.env.USE_IAM === "true"
 
 // Create a new connection to the Neptune database
-const connection = new gremlin.Connection(host, port, useIam)
+const connection = new gremlin.Connection(host, port, {useIam})
 await connection.connect()
 ```
 

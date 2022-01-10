@@ -67,14 +67,14 @@ class Connection {
      * 
      * @param {String} host 
      * @param {number} port 
-     * @param {boolean} useIam 
+     * @param {boolean} @param {useIam, partition} options
      */
-    constructor(host, port, useIam) {
+    constructor(host, port, {useIam = true, partition}) {
         this.host = host
         this.port = port
         this.useIam = useIam
         this.connection = null
-        this.partition = null
+        this.partition = partition
     }
 
     /**
